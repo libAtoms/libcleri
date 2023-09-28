@@ -50,3 +50,6 @@ clean:
 
 test:
 	@cd ../test && ./test.sh
+
+libcleri.a: $(OBJS) $(USER_OBJS)
+	ar rcs libcleri.a $(OBJS) $(USER_OBJS)
