@@ -4,6 +4,8 @@
 #ifndef CLERI_OBJECT_H_
 #define CLERI_OBJECT_H_
 
+#include <cleri/wincompat.h>
+
 #ifdef __cplusplus
 #define cleri__malloc(__t) ((__t*)malloc(sizeof(__t)))
 #else
