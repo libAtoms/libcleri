@@ -1,7 +1,6 @@
 inc_dir = include_directories('inc')
 
 libcleri = static_library('cleri',
-  'src/children.c',
   'src/choice.c',
   'src/dup.c',
   'src/expecting.c',
