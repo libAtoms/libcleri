@@ -39,6 +39,13 @@ libcleri: $(OBJS) $(USER_OBJS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+# Static library target
+libcleri.a: $(OBJS) $(USER_OBJS)
+	@echo 'Building static library: $@'
+	ar rcs $@ $(OBJS) $(USER_OBJS)
+	@echo 'Finished building static library: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) $(LIBRARIES)$(OBJS)$(C_DEPS) $(FN)
