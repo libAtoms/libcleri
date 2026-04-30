@@ -4,8 +4,20 @@
 #include <cleri/regex.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+/* PCRE2 JIT'd code intentionally reads bytes past the input end as a
+ * speed trick, which valgrind reports as "uninitialised value" reads
+ * (the PCRE2 docs warn about this). Detect valgrind via the LD_PRELOAD
+ * libs it injects on Linux and skip JIT compilation in that case.
+ * Outside of valgrind this is a no-op. */
+static int cleri__under_valgrind(void)
+{
+    const char *p = getenv("LD_PRELOAD");
+    return p != NULL && strstr(p, "valgrind") != NULL;
+}
 
 static void regex__free(cleri_t * cl_object);
 
@@ -74,6 +86,19 @@ cleri_t * cleri_regex(uint32_t gid, const char * pattern)
         free(cl_object->via.regex);
         free(cl_object);
         return NULL;
+    }
+
+    /* JIT-compile the pattern when supported. The hot regex__parse loop
+     * runs pcre2_match() many times per parse — with JIT enabled it is
+     * typically 5-30x faster. Falls through silently when JIT is not
+     * available in the linked PCRE2 build (returns
+     * PCRE2_ERROR_JIT_BADOPTION); pcre2_match auto-detects whether JIT
+     * compiled code is present. Skipped under valgrind to avoid known
+     * JIT-vs-valgrind false-positive reports.
+     */
+    if (!cleri__under_valgrind())
+    {
+        (void) pcre2_jit_compile(cl_object->via.regex->regex, PCRE2_JIT_COMPLETE);
     }
 
     cl_object->via.regex->match_data = pcre2_match_data_create_from_pattern(

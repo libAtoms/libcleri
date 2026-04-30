@@ -6,8 +6,17 @@
 #include <cleri/grammar.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <pcre2.h>
 #include <assert.h>
+
+/* See comment in src/regex.c: skip PCRE2 JIT under valgrind to avoid
+ * its known JIT-related false-positive uninitialised-value warnings. */
+static int cleri__grammar_under_valgrind(void)
+{
+    const char *p = getenv("LD_PRELOAD");
+    return p != NULL && strstr(p, "valgrind") != NULL;
+}
 
 /*
  * Returns a grammar object or NULL in case of an error.
@@ -56,6 +65,14 @@ cleri_grammar_t * cleri_grammar(cleri_t * start, const char * re_keywords)
                 buffer);
         free(grammar);
         return NULL;
+    }
+
+    /* JIT-compile the keyword-matching pattern; significant speedup on
+     * long inputs. Falls through silently when JIT is unavailable.
+     * Skipped under valgrind (see regex.c). */
+    if (!cleri__grammar_under_valgrind())
+    {
+        (void) pcre2_jit_compile(grammar->re_keywords, PCRE2_JIT_COMPLETE);
     }
 
     grammar->match_data = \
