@@ -76,6 +76,15 @@ cleri_t * cleri_regex(uint32_t gid, const char * pattern)
         return NULL;
     }
 
+    /* JIT-compile the pattern when supported. The hot regex__parse loop
+     * runs pcre2_match() many times per parse — with JIT enabled it is
+     * typically 5-30x faster. Falls through silently when JIT is not
+     * available in the linked PCRE2 build (returns
+     * PCRE2_ERROR_JIT_BADOPTION); pcre2_match auto-detects whether JIT
+     * compiled code is present.
+     */
+    (void) pcre2_jit_compile(cl_object->via.regex->regex, PCRE2_JIT_COMPLETE);
+
     cl_object->via.regex->match_data = pcre2_match_data_create_from_pattern(
             cl_object->via.regex->regex,
             NULL);

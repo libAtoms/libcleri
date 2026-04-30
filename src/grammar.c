@@ -58,6 +58,10 @@ cleri_grammar_t * cleri_grammar(cleri_t * start, const char * re_keywords)
         return NULL;
     }
 
+    /* JIT-compile the keyword-matching pattern; significant speedup on
+     * long inputs. Falls through silently when JIT is unavailable. */
+    (void) pcre2_jit_compile(grammar->re_keywords, PCRE2_JIT_COMPLETE);
+
     grammar->match_data = \
         pcre2_match_data_create_from_pattern(grammar->re_keywords, NULL);
 
